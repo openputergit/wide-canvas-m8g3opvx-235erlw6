@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaGuard AI - Smart Aquaculture Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .gauge {
+            width: 100%;
+            max-width: 250px;
+            background: conic-gradient(from 0deg, #22c55e 0%, #22c55e 70%, #dc2626 70%, #dc2626 100%);
+            border-radius: 50%;
+            position: relative;
+        }
+        .gauge::before {
+            content: '';
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            background: white;
+            border-radius: 50%;
+            top: 10%;
+            left: 10%;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <i class="bi bi-droplet-fill text-blue-600 text-2xl mr-2"></i>
+                        <span class="font-bold text-xl">AquaGuard AI</span>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button class="nav-btn active" onclick="showTab('dashboard')">Dashboard</button>
+                        <button class="nav-btn" onclick="showTab('chatbot')">AI Assistant</button>
+                        <button class="nav-btn" onclick="showTab('species')">Species Database</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Water Quality Cards -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-4">pH Level</h3>
+                        <div class="gauge mb-4"></div>
+                        <div class="text-center text-2xl font-bold" id="ph-value">7.2</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-4">Temperature</h3>
+                        <div class="gauge mb-4"></div>
+                        <div class="text-center text-2xl font-bold" id="temp-value">24°C</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-4">Turbidity</h3>
+                        <div class="gauge mb-4"></div>
+                        <div class="text-center text-2xl font-bold" id="turbidity-value">5 NTU</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-4">TDS</h3>
+                        <div class="gauge mb-4"></div>
+                        <div class="text-center text-2xl font-bold" id="tds-value">350 ppm</div>
+                    </div>
+                </div>
+                
+                <!-- Historical Chart -->
+                <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold mb-4">24-Hour History</h3>
+                    <canvas id="historyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Chatbot Tab -->
+            <div id="chatbot" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow-md h-[600px] flex flex-col">
+                    <div class="p-4 border-b">
+                        <h2 class="text-xl font-semibold">AI Assistant</h2>
+                    </div>
+                    <div class="flex-1 p-4 overflow-y-auto" id="chat-messages">
+                        <!-- Messages will be inserted here -->
+                    </div>
+                    <div class="p-4 border-t">
+                        <div class="flex gap-2">
+                            <input type="text" id="chat-input" class="flex-1 p-2 border rounded-lg" placeholder="Ask about water quality...">
+                            <button onclick="sendMessage()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Species Database Tab -->
+            <div id="species" class="tab-content hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Species Cards -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Navigation
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelector(`#${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // Initialize Historical Chart
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        const historyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => `${23-i}h ago`),
+                datasets: [{
+                    label: 'pH',
+                    data: Array.from({length: 24}, () => Math.random() * 2 + 6),
+                    borderColor: 'rgb(59, 130, 246)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Chatbot functionality
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value;
+            if (!message) return;
+
+            const chatMessages = document.getElementById('chat-messages');
+            
+            // Add user message
+            chatMessages.innerHTML += `
+                <div class="flex justify-end mb-4">
+                    <div class="bg-blue-100 rounded-lg p-3 max-w-[70%]">${message}</div>
+                </div>
+            `;
+
+            // Simulate AI response
+            setTimeout(() => {
+                const response = `Based on current readings:
+                - pH (7.2) is optimal for most species
+                - Temperature (24°C) is within safe range
+                - Turbidity (5 NTU) is acceptable
+                - TDS (350 ppm) is normal`;
+
+                chatMessages.innerHTML += `
+                    <div class="flex justify-start mb-4">
+                        <div class="bg-gray-100 rounded-lg p-3 max-w-[70%]">${response}</div>
+                    </div>
+                `;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 1000);
+
+            input.value = '';
+        }
+
+        // Initialize Species Database
+        const speciesData = [
+            {name: 'Tilapia', optimalPh: '6.5-8.5', optimalTemp: '20-30°C'},
+            {name: 'Salmon', optimalPh: '6.5-8.5', optimalTemp: '12-18°C'},
+            {name: 'Catfish', optimalPh: '6.0-8.0', optimalTemp: '24-30°C'},
+        ];
+
+        const speciesContainer = document.querySelector('#species > div');
+        speciesData.forEach(species => {
+            speciesContainer.innerHTML += `
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">${species.name}</h3>
+                    <p class="mb-2">Optimal pH: ${species.optimalPh}</p>
+                    <p>Optimal Temperature: ${species.optimalTemp}</p>
+                </div>
+            `;
+        });
+
+        // Simulate real-time updates
+        setInterval(() => {
+            document.getElementById('ph-value').textContent = (Math.random() * 2 + 6).toFixed(1);
+            document.getElementById('temp-value').textContent = `${(Math.random() * 10 + 20).toFixed(1)}°C`;
+            document.getElementById('turbidity-value').textContent = `${(Math.random() * 10).toFixed(1)} NTU`;
+            document.getElementById('tds-value').textContent = `${Math.floor(Math.random() * 200 + 250)} ppm`;
+        }, 5000);
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
